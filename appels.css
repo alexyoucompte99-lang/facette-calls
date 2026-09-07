@@ -40,6 +40,16 @@
 .appel-cabinet-nom{font-size:13.5px;font-weight:600;line-height:1.3}
 .appel-cabinet-nom span{color:var(--texte-doux);font-weight:500}
 .appel-approx{font-size:11px;font-weight:500;color:#FFD9B0;background:rgba(255,154,61,0.16);padding:1px 7px;border-radius:999px;margin-left:4px;white-space:nowrap}
+/* le référencement en gros */
+.appel-ref{margin-top:9px;padding:9px 12px 10px;border-radius:10px;border:1px solid transparent;display:flex;flex-direction:column;gap:1px}
+.appel-ref-etiquette{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.75}
+.appel-ref-gros{font-family:var(--mono);font-size:34px;font-weight:800;line-height:1.05;letter-spacing:-.02em}
+.appel-ref-gros sup{font-size:16px;font-weight:700;vertical-align:top;position:relative;top:4px;margin-left:1px}
+.appel-ref-petit{font-size:12.5px;font-weight:600;line-height:1.35;opacity:.9}
+.appel-ref.ref-rouge{color:#FF8FA6;background:rgba(244,70,126,0.16);border-color:rgba(244,70,126,0.35)}
+.appel-ref.ref-orange{color:#FFD9B0;background:rgba(255,154,61,0.16);border-color:rgba(255,154,61,0.35)}
+.appel-ref.ref-vert{color:#7DF0CD;background:rgba(47,211,165,0.16);border-color:rgba(47,211,165,0.35)}
+.appel-ref.ref-gris{color:var(--texte-doux);background:rgba(255,255,255,0.05);border-color:var(--trait)}
 .appel-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .appel-chip{
   display:inline-flex;align-items:baseline;gap:5px;padding:3px 8px;border-radius:8px;

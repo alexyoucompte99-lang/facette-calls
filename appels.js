@@ -313,6 +313,28 @@
     return '<span class="appel-chip' + cl + '"><i>' + etiquette + '</i>' + (isFinite(v) ? nombre(v) : '—') + '</span>';
   }
 
+  /* le référencement en gros : sa place sur « dentiste + ville » */
+  function blocReferencement(e) {
+    var det = detailDe(e) || {};
+    var pos = det.position || e.position || null;
+    var total = det.total || null;
+    var requete = 'dentiste ' + (e.ville || '');
+    var cl, gros, petit;
+    if (pos) {
+      cl = pos === 1 ? 'ref-vert' : pos <= 3 ? 'ref-orange' : 'ref-rouge';
+      gros = pos + '<sup>' + (pos === 1 ? 'er' : 'e') + '</sup>';
+      petit = (total ? 'sur ' + total + ' cabinets ' : '') + 'sur « ' + html(requete) + ' »';
+    } else if (total) {
+      cl = 'ref-rouge'; gros = 'Hors top ' + total;
+      petit = 'invisible sur « ' + html(requete) + ' »';
+    } else {
+      cl = 'ref-gris'; gros = '?';
+      petit = 'place sur Google inconnue';
+    }
+    return '<div class="appel-ref ' + cl + '"><span class="appel-ref-etiquette">Référencement Google</span>' +
+      '<b class="appel-ref-gros">' + gros + '</b><span class="appel-ref-petit">' + petit + '</span></div>';
+  }
+
   function carteAppel(a) {
     var l = a.lead, e = a.etude, id = html(l.id);
     var passe = a.debut.getTime() < Date.now() - 5 * 60000;
@@ -342,8 +364,8 @@
       s += '<div class="appel-cabinet">';
       s += '<p class="appel-cabinet-nom">' + html(e.cabinet || 'Cabinet non transmis') + (e.ville ? ' <span>· ' + html(e.ville) + '</span>' : '') +
         (!e.par_nom ? ' <span class="appel-approx" title="Rattaché par l’heure de l’analyse, pas par le nom : à vérifier">rattaché par l’heure</span>' : '') + '</p>';
+      s += blocReferencement(e);
       s += '<p class="appel-chips">' + chipScore('Score', e.global, true) + chipScore('Google', e.seo) + chipScore('IA', e.geo) +
-        '<span class="appel-chip"><i>Place</i>' + (e.position ? e.position + 'ᵉ' : '—') + '</span>' +
         '<span class="appel-chip"><i>Corrections</i>' + (isFinite(e.corrections) ? e.corrections : '—') + '</span></p>';
       if (e.telephone) s += '<p class="appel-sous">Ligne du cabinet (fiche Google) : <a class="lien-tel" href="tel:' + html(String(e.telephone).replace(/\s+/g, '')) + '">' + html(e.telephone) + '</a></p>';
       var det = detailDe(e);
