@@ -20,7 +20,7 @@
   var CLE_SUIVI = 'facette-appels-suivi';   /* le suivi des relances, dans le navigateur */
   var FENETRE_MATCH_MIN = 45;               /* minutes entre l'analyse et la réservation */
 
-  var appels = { leads: null, etudes: null, erreur: null, ouvert: {} };
+  var appels = { leads: null, etudes: null, details: {}, erreur: null, ouvert: {}, detailOuvert: {} };
 
   /* ------------------------------ outils ----------------------------- */
 
@@ -128,6 +128,12 @@
     return meilleure ? Object.assign({ par_nom: meilleurScore >= 900 }, meilleure) : null;
   }
 
+  /* le détail complet du cabinet (relevé par le robot sur l'API du test), s'il existe */
+  function detailDe(e) {
+    if (!e) return null;
+    return appels.details[(e.cabinet || '') + '|' + (e.ville || '')] || null;
+  }
+
   /* ------------------------------ les messages ----------------------- */
 
   /* un nom de fiche Google à rallonge n'a rien à faire dans un message :
@@ -153,6 +159,12 @@
       score: e && isFinite(e.global) ? e.global : null,
       position: e && e.position ? e.position : null,
       corrections: e && e.corrections ? e.corrections : null,
+      premiere: (function () {
+        var det = detailDe(e);
+        if (!det || !det.corrections || !det.corrections.length) return null;
+        var rouge = det.corrections.filter(function (c) { return c.niveau === 'rouge'; })[0] || det.corrections[0];
+        return rouge && rouge.titre ? rouge.titre.toLowerCase() : null;
+      })(),
       qui: QUI_APPELLE,
       marque: MARQUE
     };
@@ -166,7 +178,7 @@
         if (c.score !== null) {
           constat = 'J’ai regardé votre fiche : ' + c.score + '/100' +
             (c.position ? ', ' + c.position + 'ᵉ sur « dentiste ' + c.ville + ' »' : '') + '. ';
-          if (c.corrections) constat += 'J’ai déjà repéré ' + c.corrections + ' corrections concrètes, je vous les montre pendant l’appel. ';
+          if (c.corrections) constat += 'J’ai déjà repéré ' + c.corrections + ' corrections concrètes' + (c.premiere ? ' (la première : ' + c.premiere + ')' : '') + ', je vous les montre pendant l’appel. ';
         }
         return 'Bonjour Dr ' + c.nom + ', ' + c.qui + ' de ' + c.marque + '. ' +
           'J’ai bien votre créneau ' + c.jour + ' à ' + c.heure + ' pour ' + c.cabinet + '. ' +
@@ -241,7 +253,7 @@
     /* page autonome chiffrée : c'est la page qui sait lire le fichier */
     if (window.APPELS_CHARGEUR) {
       window.APPELS_CHARGEUR().then(function (j) {
-        appels.leads = j.leads || []; appels.etudes = j.etudes || []; appels.erreur = null;
+        appels.leads = j.leads || []; appels.etudes = j.etudes || []; appels.details = j.details || {}; appels.erreur = null;
         appels.releve = j.genere_le || null;
         rendreAppels();
       }).catch(function (e) { appels.erreur = e.message; rendreAppels(); });
@@ -334,6 +346,14 @@
         '<span class="appel-chip"><i>Place</i>' + (e.position ? e.position + 'ᵉ' : '—') + '</span>' +
         '<span class="appel-chip"><i>Corrections</i>' + (isFinite(e.corrections) ? e.corrections : '—') + '</span></p>';
       if (e.telephone) s += '<p class="appel-sous">Ligne du cabinet (fiche Google) : <a class="lien-tel" href="tel:' + html(String(e.telephone).replace(/\s+/g, '')) + '">' + html(e.telephone) + '</a></p>';
+      var det = detailDe(e);
+      if (det) {
+        var ouvertD = !!appels.detailOuvert[l.id];
+        var nbCorr = det.corrections ? det.corrections.length : 0;
+        s += '<button type="button" class="appel-voir' + (ouvertD ? ' ouvert' : '') + '">' +
+          (ouvertD ? 'Masquer le détail' : 'Voir ' + (nbCorr ? 'les ' + nbCorr + ' corrections, ' : '') + 'la fiche Google et les concurrents') + '</button>';
+        if (ouvertD) s += panneauDetail(det, e);
+      }
       s += '</div>';
     } else {
       s += '<p class="appel-sous appel-sans">Aucune analyse rattachée : il a réservé sans faire le test, ou trop loin de l’analyse. À préparer à la main.</p>';
@@ -365,6 +385,37 @@
     s += '</div></div>';
 
     s += '</article>';
+    return s;
+  }
+
+  function panneauDetail(det, e) {
+    var s = '<div class="appel-detail">';
+    /* la fiche */
+    var fiche = [];
+    if (det.note) fiche.push('<b>★ ' + html(String(det.note).replace('.', ',')) + '</b> · ' + nombre(det.avis) + ' avis Google');
+    if (det.position) fiche.push('<b>' + det.position + 'ᵉ</b>' + (det.total ? ' sur ' + det.total : '') + ' sur « dentiste ' + html(e.ville || '') + ' »');
+    if (det.site) fiche.push('<a href="' + html(det.site) + '" target="_blank" rel="noopener">' + html(String(det.site).replace(/^https?:\/\//, '').replace(/\/$/, '')) + '</a>');
+    else fiche.push('<span class="appel-detail-alerte">pas de site web</span>');
+    s += '<p class="appel-detail-fiche">' + fiche.join(' <i>·</i> ') + '</p>';
+    /* les corrections */
+    if (det.corrections && det.corrections.length) {
+      s += '<p class="appel-detail-titre">Ce qu’il faut corriger</p><ul class="appel-corrections">';
+      det.corrections.forEach(function (c) {
+        s += '<li class="niveau-' + html(c.niveau || 'orange') + '"><b>' + html(c.titre || '') + '</b>' +
+          (c.groupe ? ' <i>' + html(c.groupe) + '</i>' : '') + '<span>' + html(c.texte || '') + '</span></li>';
+      });
+      s += '</ul>';
+    }
+    /* les concurrents */
+    if (det.concurrents && det.concurrents.length) {
+      s += '<p class="appel-detail-titre">Ceux qui passent devant lui</p><ul class="appel-concurrents">';
+      det.concurrents.forEach(function (c, i) {
+        s += '<li><b>' + (i + 1) + '.</b> ' + html(c.nom || '') + ' <span>★ ' + html(String(c.note || '—').replace('.', ',')) + ' · ' + nombre(c.avis) + ' avis</span></li>';
+      });
+      s += '</ul>';
+    }
+    s += '<p class="appel-sous">Analyse relevée le ' + (det.releve ? paris(new Date(det.releve), { day: '2-digit', month: '2-digit' }) + ' à ' + heureParis(new Date(det.releve)) : '—') + '</p>';
+    s += '</div>';
     return s;
   }
 
@@ -435,6 +486,14 @@
       var a = appelDepuis(onglet);
       if (!a) return;
       appels.ouvert[a.lead.id] = onglet.dataset.message;
+      rendreAppels();
+      return;
+    }
+    var voir = ev.target.closest('.appel-voir');
+    if (voir) {
+      var art0 = voir.closest('article.appel');
+      var id0 = art0.getAttribute('data-id');
+      appels.detailOuvert[id0] = !appels.detailOuvert[id0];
       rendreAppels();
       return;
     }
