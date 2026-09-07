@@ -325,7 +325,7 @@
       gros = pos + '<sup>' + (pos === 1 ? 'er' : 'e') + '</sup>';
       petit = (total ? 'sur ' + total + ' cabinets ' : '') + 'sur « ' + html(requete) + ' »';
     } else if (total) {
-      cl = 'ref-rouge'; gros = 'Hors top ' + total;
+      cl = 'ref-rouge'; gros = '<span class="texte">Hors top ' + total + '</span>';
       petit = 'invisible sur « ' + html(requete) + ' »';
     } else {
       cl = 'ref-gris'; gros = '?';

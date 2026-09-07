@@ -44,6 +44,7 @@
 .appel-ref{margin-top:9px;padding:9px 12px 10px;border-radius:10px;border:1px solid transparent;display:flex;flex-direction:column;gap:1px}
 .appel-ref-etiquette{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.75}
 .appel-ref-gros{font-family:var(--mono);font-size:34px;font-weight:800;line-height:1.05;letter-spacing:-.02em}
+.appel-ref-gros .texte{font-size:24px;letter-spacing:0}
 .appel-ref-gros sup{font-size:16px;font-weight:700;vertical-align:top;position:relative;top:4px;margin-left:1px}
 .appel-ref-petit{font-size:12.5px;font-weight:600;line-height:1.35;opacity:.9}
 .appel-ref.ref-rouge{color:#FF8FA6;background:rgba(244,70,126,0.16);border-color:rgba(244,70,126,0.35)}
