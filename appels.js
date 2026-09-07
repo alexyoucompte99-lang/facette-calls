@@ -238,6 +238,18 @@
   /* ------------------------------ lecture ---------------------------- */
 
   function chargerAppels() {
+    /* page autonome : les données viennent d'un fichier JSON relevé par le robot */
+    if (window.APPELS_SOURCE) {
+      fetch(window.APPELS_SOURCE + (window.APPELS_SOURCE.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now(), { cache: 'no-store' })
+        .then(function (r) { if (!r.ok) throw new Error('fichier des rendez-vous introuvable (' + r.status + ')'); return r.json(); })
+        .then(function (j) {
+          appels.leads = j.leads || []; appels.etudes = j.etudes || []; appels.erreur = null;
+          appels.releve = j.genere_le || null;
+          rendreAppels();
+        })
+        .catch(function (e) { appels.erreur = e.message; rendreAppels(); });
+      return;
+    }
     var periode = 'depuis=' + encodeURIComponent(PREMIER_JOUR) + '&jusqua=' + encodeURIComponent(aujourdhui());
     var pLeads = lireApi('/api/leads?' + periode).then(function (r) {
       if (!r.ok || r.corps.erreur) throw new Error(r.corps.erreur || 'réponse inattendue');
@@ -266,7 +278,7 @@
     var res = [];
     (appels.leads || []).forEach(function (l) {
       if (l.rdv !== 'confirme' || !l.rdv_debut) return;
-      if (l.test && !etat.tests) return;
+      if (l.test && !(window.etat && etat.tests)) return;
       var d = new Date(l.rdv_debut);
       if (isNaN(d) || d < debutJour) return;
       res.push({ lead: l, debut: d, etude: etudePour(l, appels.etudes), suivi: suivi[l.id] || {} });
@@ -367,6 +379,11 @@
       var confirmes = liste.filter(function (a) { return a.suivi.confirme; }).length;
       compteur.hidden = false;
       compteur.textContent = aVenir + ' à venir · ' + confirmes + ' confirmé' + (confirmes > 1 ? 's' : '') + ' par message';
+      var releve = document.getElementById('releve-appels');
+      if (releve && appels.releve) {
+        var dr = new Date(appels.releve);
+        releve.textContent = isNaN(dr) ? '' : 'Relevé le ' + paris(dr, { day: '2-digit', month: '2-digit' }) + ' à ' + heureParis(dr) + ' · mise à jour automatique toutes les 15 min';
+      }
       compteur.classList.toggle('tout-fait', aVenir > 0 && confirmes === aVenir);
     }
     if (!liste.length) {
