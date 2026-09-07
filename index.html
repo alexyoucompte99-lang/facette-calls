@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Facette · Les appels à venir</title>
+<style>
+  :root{--nuit:#0E0820;--carte:#1B1235;--trait:rgba(255,255,255,.12);--texte:#F6F2FF;--doux:rgba(246,242,255,.65);--faible:rgba(246,242,255,.45);--orange:#FF9A3D;--rose:#F4467E;--vert:#2FD3A5;--violet:#6E3AF7}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--nuit);color:var(--texte);font:15px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+  main{max-width:760px;margin:0 auto;padding:48px 22px 80px}
+  h1{font-size:30px;letter-spacing:-.02em;margin:0 0 6px}
+  .sous{color:var(--doux);margin:0 0 34px}
+  section{background:var(--carte);border:1px solid var(--trait);border-radius:16px;padding:22px 24px;margin-bottom:18px}
+  h2{font-size:18px;margin:0 0 10px}
+  p{margin:8px 0;color:var(--doux)}
+  b{color:var(--texte)}
+  ol,ul{padding-left:22px;color:var(--doux)}
+  li{margin:6px 0}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:13px;background:rgba(0,0,0,.3);padding:2px 6px;border-radius:6px;color:#FFD9B0}
+  pre{background:rgba(0,0,0,.35);border:1px solid var(--trait);border-radius:10px;padding:12px 14px;overflow-x:auto;font-size:12.5px;color:#FFD9B0}
+  a{color:#9DB6FF}
+  .favori{display:inline-block;background:linear-gradient(135deg,var(--rose),var(--violet));color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:999px;cursor:grab;margin:8px 0}
+  .favori:active{cursor:grabbing}
+  .etapes li{margin:9px 0}
+  .fichiers a{display:inline-block;margin:4px 10px 4px 0}
+  .note{font-size:13px;color:var(--faible)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Facette · Les appels à venir</h1>
+  <p class="sous">L'onglet qui liste tous les rendez-vous posés et prépare les relances WhatsApp, pour le dashboard <a href="https://dashboard-facette.vercel.app" target="_blank" rel="noopener">dashboard-facette.vercel.app</a>.</p>
+
+  <section>
+    <h2>1. L'utiliser tout de suite (Alex)</h2>
+    <p>Glisse ce bouton dans ta barre de favoris. Ensuite, sur le dashboard, clique le favori : l'onglet apparaît sous les cartes de coût.</p>
+    <a class="favori" href="javascript:(function(){var s=document.createElement('script');s.src='https://alexyoucompte99-lang.github.io/facette-calls/loader.js?'+Date.now();document.body.appendChild(s)})();" title="Glisse-moi dans la barre de favoris">📞 Appels Facette</a>
+    <p class="note">Si le glisser-déposer ne marche pas : nouveau favori, et colle ce texte comme adresse.</p>
+    <pre>javascript:(function(){var s=document.createElement('script');s.src='https://alexyoucompte99-lang.github.io/facette-calls/loader.js?'+Date.now();document.body.appendChild(s)})();</pre>
+    <p class="note">Ça ne modifie rien sur le site de Léo : le code se charge dans ta page, avec ta session déjà ouverte. À refaire à chaque ouverture du dashboard, jusqu'à ce que Léo l'intègre.</p>
+  </section>
+
+  <section>
+    <h2>2. L'intégrer dans le dépôt (Léo)</h2>
+    <p>Trois fichiers, aucune modification de <code>app.js</code>. Rien à ajouter côté API ni SQL : l'onglet lit <code>/api/leads</code> et <code>/api/funnel</code> avec la session en cours.</p>
+    <ol class="etapes">
+      <li>Copier <code>appels.js</code> et <code>appels.css</code> à côté de <code>app.js</code>.</li>
+      <li>Dans <code>index.html</code>, dans le <code>&lt;head&gt;</code> : <code>&lt;link rel="stylesheet" href="appels.css"&gt;</code></li>
+      <li>Coller le contenu de <code>section.html</code> juste après <code>&lt;section class="grille-kpi" id="kpi-argent" …&gt;&lt;/section&gt;</code></li>
+      <li>En bas, après <code>&lt;script src="app.js"&gt;&lt;/script&gt;</code> : <code>&lt;script src="appels.js"&gt;&lt;/script&gt;</code></li>
+      <li>Déployer.</li>
+    </ol>
+    <p class="fichiers">
+      <a href="appels.js">appels.js</a>
+      <a href="appels.css">appels.css</a>
+      <a href="section.html">section.html</a>
+      <a href="INTEGRATION.md">INTEGRATION.md</a>
+      <a href="message-leo.md">message pour Léo</a>
+      <a href="https://github.com/alexyoucompte99-lang/facette-calls" target="_blank" rel="noopener">le dépôt GitHub</a>
+    </p>
+  </section>
+
+  <section>
+    <h2>Ce que fait l'onglet</h2>
+    <ul>
+      <li><b>Chaque rendez-vous</b> posé dans Créno, jour par jour, heure de Paris, compte à rebours.</li>
+      <li><b>Le prospect</b> : nom, téléphone, e-mail, cabinet, ville, score global / Google / IA, place sur Google, corrections, ligne du cabinet, date de réservation, pub d'origine.</li>
+      <li><b>4 messages WhatsApp</b> déjà écrits avec ces données : confirmer le créneau, poser une question, rappel 1 h avant, il n'a pas répondu. Le bon est marqué « conseillé » selon l'heure. Texte modifiable, bouton WhatsApp et Copier.</li>
+      <li><b>Suivi</b> « message envoyé » / « il a confirmé », mémorisé sur le navigateur.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>
