@@ -67,6 +67,70 @@
   </section>
 </main>
 
+<!-- la porte : le code d'accès du dashboard, demandé une fois par appareil -->
+<div class="porte" id="porte" hidden>
+  <form class="porte-carte" id="porte-form">
+    <p class="porte-nom">📞 Appels Facette</p>
+    <p class="porte-sous">Le fichier des rendez-vous est chiffré. Entrez le code d'accès du dashboard Facette pour l'ouvrir.</p>
+    <input class="porte-champ" id="porte-code" type="password" autocomplete="current-password" placeholder="Le code d'accès" required>
+    <button type="submit" class="porte-bouton">Ouvrir</button>
+    <p class="porte-erreur" id="porte-erreur" hidden></p>
+    <p class="porte-note">Le code reste sur cet appareil. Rien n'est envoyé nulle part : le déchiffrement se fait dans votre navigateur.</p>
+  </form>
+</div>
+<style>
+  .porte{position:fixed;inset:0;background:rgba(14,8,32,.96);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
+  .porte[hidden]{display:none}
+  .porte-carte{width:100%;max-width:380px;background:var(--carte);border:1px solid var(--trait);border-radius:16px;padding:26px 24px;text-align:center}
+  .porte-nom{font-family:var(--display);font-weight:800;font-size:22px;margin:0}
+  .porte-sous{color:var(--texte-doux);font-size:13.5px;margin:8px 0 18px}
+  .porte-champ{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--trait-fort);background:rgba(0,0,0,.3);color:var(--texte);font:inherit;font-size:15px}
+  .porte-champ:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 3px rgba(110,58,247,.25)}
+  .porte-bouton{width:100%;margin-top:12px;padding:12px;border:0;border-radius:10px;background:linear-gradient(135deg,var(--rose),var(--violet));color:#fff;font:inherit;font-weight:700;font-size:15px;cursor:pointer}
+  .porte-erreur{color:#FFB3C6;font-size:13px;margin:10px 0 0}
+  .porte-note{color:var(--texte-faible);font-size:12px;margin:14px 0 0}
+</style>
+<script>
+  /* le déchiffrement : même code que le dashboard, dérivé en clé AES-GCM (voir releve.py) */
+  var CLE_CODE = 'facette-appels-code';
+  function b64(s) { var b = atob(s), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
+  async function dechiffrer(paquet, code) {
+    var enc = new TextEncoder();
+    var base = await crypto.subtle.importKey('raw', enc.encode(code), 'PBKDF2', false, ['deriveKey']);
+    var cle = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64(paquet.sel), iterations: paquet.iterations, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    var clair = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(paquet.iv) }, cle, b64(paquet.data));
+    return JSON.parse(new TextDecoder().decode(clair));
+  }
+  function codeMemorise() { try { return localStorage.getItem(CLE_CODE) || ''; } catch (e) { return ''; } }
+  function demanderCode(message) {
+    return new Promise(function (resoudre) {
+      var porte = document.getElementById('porte'), form = document.getElementById('porte-form'), champ = document.getElementById('porte-code'), erreur = document.getElementById('porte-erreur');
+      erreur.hidden = !message; erreur.textContent = message || '';
+      porte.hidden = false; champ.value = ''; champ.focus();
+      form.onsubmit = function (e) { e.preventDefault(); porte.hidden = true; resoudre(champ.value.trim()); };
+      champ.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); form.onsubmit(e); } };
+    });
+  }
+  window.APPELS_CHARGEUR = async function () {
+    var r = await fetch('data/appels.enc?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('fichier des rendez-vous introuvable (' + r.status + ')');
+    var paquet = await r.json();
+    if (!paquet.data) throw new Error('Le premier relevé n’est pas encore passé. Réessayez dans un quart d’heure.');
+    var code = codeMemorise(), message = '';
+    for (;;) {
+      if (!code) code = await demanderCode(message);
+      try {
+        var j = await dechiffrer(paquet, code);
+        try { localStorage.setItem(CLE_CODE, code); } catch (e) {}
+        j.genere_le = j.genere_le || paquet.genere_le;
+        return j;
+      } catch (e) {
+        code = ''; message = 'Ce code n’ouvre pas le fichier. Réessayez.';
+        try { localStorage.removeItem(CLE_CODE); } catch (e2) {}
+      }
+    }
+  };
+</script>
 <script>
   /* les quelques outils que appels.js attend du tableau de bord */
   var PREMIER_JOUR = '2026-08-30';
@@ -77,7 +141,6 @@
   function classeScore(v) { return v < 45 ? 'score-rouge' : v < 70 ? 'score-orange' : 'score-vert'; }
   function nomQualite(c) { return { bien: 'Bien', tres_bien: 'Très bien', excellent: 'Excellent', ecarte: 'Écarté' }[c] || c; }
   function lireApi() { return Promise.reject(new Error('pas d’API ici')); }
-  window.APPELS_SOURCE = 'data/appels.json';
 </script>
 <script src="appels.js"></script>
 <script>

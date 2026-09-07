@@ -238,6 +238,15 @@
   /* ------------------------------ lecture ---------------------------- */
 
   function chargerAppels() {
+    /* page autonome chiffrée : c'est la page qui sait lire le fichier */
+    if (window.APPELS_CHARGEUR) {
+      window.APPELS_CHARGEUR().then(function (j) {
+        appels.leads = j.leads || []; appels.etudes = j.etudes || []; appels.erreur = null;
+        appels.releve = j.genere_le || null;
+        rendreAppels();
+      }).catch(function (e) { appels.erreur = e.message; rendreAppels(); });
+      return;
+    }
     /* page autonome : les données viennent d'un fichier JSON relevé par le robot */
     if (window.APPELS_SOURCE) {
       fetch(window.APPELS_SOURCE + (window.APPELS_SOURCE.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now(), { cache: 'no-store' })
